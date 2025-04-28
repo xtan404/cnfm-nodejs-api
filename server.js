@@ -41,6 +41,34 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
+// API: Get sea_us_rpl data with valid coordinates and non-empty date_installed
+app.get('/sea-us-rpl', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth,
+      date_installed
+    FROM sea_us_rpl
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sea_us_rpl data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+
 // Fetching Last Update
 app.get('/latest-update', (req, res) => {
   const query = `
