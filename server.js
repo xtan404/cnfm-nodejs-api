@@ -42,7 +42,31 @@ app.get('/', (req, res) => {
 });
 
 // API: Get sea_us_rpl data with valid coordinates and non-empty date_installed
-app.get('/sea-us-rpl', (req, res) => {
+app.get('/sea-us-rpl-s1', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth
+    FROM sea_us_rpl_s1
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sea_us_rpl_s1 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sea-us-rpl-s2', (req, res) => {
   const query = `
     SELECT
       event,
@@ -51,7 +75,7 @@ app.get('/sea-us-rpl', (req, res) => {
       cable_cumulative_total,
       approx_depth,
       date_installed
-    FROM sea_us_rpl
+    FROM sea_us_rpl_s2
     WHERE 
       (latitude + latitude2) != 0 
       AND (longitude + longitude2) != 0 
@@ -60,7 +84,31 @@ app.get('/sea-us-rpl', (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching sea_us_rpl data:', err);
+      console.error('Error fetching sea_us_rpl_s2 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sea-us-rpl-s3', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth
+    FROM sea_us_rpl_s3
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sea_us_rpl_s3 data:', err);
       return res.status(500).json({ error: 'Failed to fetch data' });
     }
 
