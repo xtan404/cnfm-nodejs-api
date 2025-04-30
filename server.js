@@ -49,7 +49,7 @@ app.get('/sea-us-rpl-s1', (req, res) => {
       (latitude + latitude2) AS full_latitude,
       (longitude + longitude2) AS full_longitude,
       cable_cumulative_total,
-      approx_depth
+      approx_depth AS Depth
     FROM sea_us_rpl_s1
     WHERE 
       (latitude + latitude2) != 0 
@@ -73,7 +73,7 @@ app.get('/sea-us-rpl-s2', (req, res) => {
       (latitude + latitude2) AS full_latitude,
       (longitude + longitude2) AS full_longitude,
       cable_cumulative_total,
-      approx_depth,
+      approx_depth AS Depth,
       date_installed
     FROM sea_us_rpl_s2
     WHERE 
@@ -99,7 +99,7 @@ app.get('/sea-us-rpl-s3', (req, res) => {
       (latitude + latitude2) AS full_latitude,
       (longitude + longitude2) AS full_longitude,
       cable_cumulative_total,
-      approx_depth
+      approx_depth AS Depth
     FROM sea_us_rpl_s3
     WHERE 
       (latitude + latitude2) != 0 
