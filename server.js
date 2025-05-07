@@ -41,7 +41,318 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
-// API: Get sea_us_rpl data with valid coordinates and non-empty date_installed
+// API: Get SJC RPL data with valid coordinates and non-empty date_installed
+app.get('/sjc-rpl-s1', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth
+    FROM sjc_rpl_s1
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s1 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s3', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s3
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s3 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s4', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s4
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s4 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s5', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s5
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s5 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s6', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s6
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s6 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s7', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s7
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s7 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s8', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s8
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s8 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s9', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s9
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s9 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s10', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s10
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s10 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s11', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s11
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s11 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s12', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s12
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s12 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sjc-rpl-s13', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      (latitude + latitude2) AS full_latitude,
+      (longitude + longitude2) AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth,
+      date_installed
+    FROM sjc_rpl_s13
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+      AND TRIM(date_installed) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sjc_rpl_s13 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+// API: Get SEA-US RPL data with valid coordinates and non-empty date_installed
 app.get('/sea-us-rpl-s1', (req, res) => {
   const query = `
     SELECT
