@@ -41,6 +41,169 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
+// API: Get TGN-IA RPL data with valid coordinates and non-empty date_installed
+app.get('/tgnia-rpl-s7', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s7
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s7 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s8', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s8
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s8 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s9', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s9
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s9 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s10', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s10
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+       AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s10 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s11', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s11
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+       AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s11 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s12', (req, res) => {
+  const query = `
+    SELECT
+      remarks AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s12
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+       AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s12 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
 // API: Get SJC RPL data with valid coordinates and non-empty date_installed
 app.get('/sjc-rpl-s1', (req, res) => {
   const query = `
