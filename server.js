@@ -42,10 +42,172 @@ app.get('/', (req, res) => {
 });
 
 // API: Get TGN-IA RPL data with valid coordinates and non-empty date_installed
+app.get('/tgnia-rpl-s1', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s1
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s1 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s2', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s2
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s2 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s3', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s3
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s3 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s4', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s4
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s4 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s5', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s5
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s5 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/tgnia-rpl-s6', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      latitude AS full_latitude,
+      longitude AS full_longitude,
+      route_distance_cumm AS cable_cumulative_total,
+      water_depth AS Depth,
+      operation_date AS date_installed
+    FROM tgnia_rpl_s6
+    WHERE 
+      latitude != 0 
+      AND longitude != 0
+      AND TRIM(operation_date) != ''
+      AND TRIM(route_distance_cumm) != ''
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching tgnia_rpl_s6 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
 app.get('/tgnia-rpl-s7', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
@@ -72,7 +234,7 @@ app.get('/tgnia-rpl-s7', (req, res) => {
 app.get('/tgnia-rpl-s8', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
@@ -99,7 +261,7 @@ app.get('/tgnia-rpl-s8', (req, res) => {
 app.get('/tgnia-rpl-s9', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
@@ -126,7 +288,7 @@ app.get('/tgnia-rpl-s9', (req, res) => {
 app.get('/tgnia-rpl-s10', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
@@ -153,7 +315,7 @@ app.get('/tgnia-rpl-s10', (req, res) => {
 app.get('/tgnia-rpl-s11', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
@@ -180,7 +342,7 @@ app.get('/tgnia-rpl-s11', (req, res) => {
 app.get('/tgnia-rpl-s12', (req, res) => {
   const query = `
     SELECT
-      remarks AS event,
+      repeater AS event,
       latitude AS full_latitude,
       longitude AS full_longitude,
       route_distance_cumm AS cable_cumulative_total,
