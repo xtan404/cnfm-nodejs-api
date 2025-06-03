@@ -41,6 +41,41 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
+// API: Get all cable cuts data
+app.get('/fetch-cable-cuts', (req, res) => {
+  const query = `
+    SELECT * FROM cable_cuts
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching cable cuts data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+// API: Insert all cable cuts data
+app.post('/cable-cuts', (req, res) => {
+  const { cut_id, distance, cut_type, simulated, latitude, longitude, depth } = req.body;
+
+  const query = `
+    INSERT INTO cable_cuts (cut_id, distance, cut_type, simulated, latitude, longitude, depth)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(query, [cut_id, distance, cut_type, simulated, latitude, longitude, depth], (err, results) => {
+    if (err) {
+      console.error('Error inserting cable cuts data:', err);
+      return res.status(500).json({ error: 'Failed to insert data' });
+    }
+
+    res.status(201).json({ message: 'Cable cuts data inserted successfully', data: results });
+  });
+});
+
 // API: Get TGN-IA RPL data with valid coordinates and non-empty date_installed
 app.get('/tgnia-rpl-s1', (req, res) => {
   const query = `
@@ -844,6 +879,271 @@ app.post('/upload-csv', upload.single('file'), (req, res) => {
         );
       });
     });
+});
+
+// CSV headers (manually defined)
+const sea_us_1_3_Headers = [
+  'pos_no', 'event', 'latitude', 'latitude2', 'latitude3', 'longitude', 
+  'longitude2', 'longitude3', 'decimal_latitude', 'radians_latitude', 
+  'sin_latitude', 'meridional_parts', 'distance_from_equator', 
+  'decimal_longitude', 'difference_in_latitude', 'difference_in_mps', 
+  'difference_in_edist', 'difference_in_longitude', 'course', 
+  'distance_in_nmiles', 'bearing', 'between_positions', 'cumulative_total', 
+  'slack', 'cable_between_positions', 'cable_cumulative_total', 'cable_type', 
+  'cumulative_by_type', 'cable_totals_by_type', 'approx_depth', 
+  'planned_target_burial_depth', 'route_features', 'a', 'aa', 'ee'
+];
+
+const sea_us_2_Headers = [
+  'pos_no', 'event', 'latitude', 'latitude2', 'latitude3', 'longitude', 
+  'longitude2', 'longitude3', 'decimal_latitude', 'radians_latitude', 
+  'sin_latitude', 'meridional_parts', 'distance_from_equator', 
+  'decimal_longitude', 'difference_in_latitude', 'difference_in_mps', 
+  'difference_in_edist', 'difference_in_longitude', 'course', 
+  'distance_in_nmiles', 'bearing', 'between_positions', 'cumulative_total', 
+  'slack', 'cable_between_positions', 'cable_cumulative_total', 'cable_type', 
+  'cumulative_by_type', 'cable_totals_by_type', 'approx_depth', 
+  'lay_direction', 'lay_vessel', 'date_installed', 'burial_method', 
+  'burial_depth', 'route_features', 'a', 'aa', 'ee'
+];
+
+app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
+  const { cable, segment } = req.params;
+  
+  console.log(`Upload request received for cable: ${cable}, segment: ${segment}`);
+  
+  // Check if file was uploaded
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  const filePath = req.file.path;
+  const results = [];
+
+  // Map cable names to database prefixes
+  const cableMapping = {
+    'sea-us': 'sea_us',
+    'sjc': 'sjc',
+    'tgnia': 'tgnia'
+  };
+
+  // Get the database table name
+  const dbPrefix = cableMapping[cable];
+  if (!dbPrefix) {
+    fs.unlinkSync(filePath); // Clean up file
+    return res.status(400).json({ message: `Invalid cable selection: ${cable}` });
+  }
+
+  const tableName = `${dbPrefix}_rpl_${segment}`;
+  console.log(`Target table: ${tableName}`);
+
+  // Determine headers and query structure based on segment
+  const isSegment2 = segment === 's2';
+  const headers = isSegment2 ? sea_us_2_Headers : sea_us_1_3_Headers;
+  
+  // Validate that the table exists
+  db.query(`SHOW TABLES LIKE '${tableName}'`, (err, result) => {
+    if (err) {
+      console.error('Database error checking table:', err);
+      fs.unlinkSync(filePath);
+      return res.status(500).json({ message: 'Database error checking table existence' });
+    }
+    
+    if (result.length === 0) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ message: `Table ${tableName} does not exist` });
+    }
+
+    // Process the CSV file
+    fs.createReadStream(filePath)
+      .pipe(csv({ headers: headers, skipLines: 1 }))
+      .on('data', (row) => {
+        // Skip completely empty rows
+        if (Object.values(row).every(value => value === '' || value === null || value === undefined)) {
+          return;
+        }
+        results.push(row);
+      })
+      .on('end', () => {
+        console.log(`Processed ${results.length} rows from CSV`);
+        
+        if (results.length === 0) {
+          fs.unlinkSync(filePath);
+          return res.status(400).json({ message: 'No valid data found in CSV file' });
+        }
+
+        // First, delete all existing data from the table
+        db.query(`DELETE FROM ${tableName}`, (deleteErr, deleteResult) => {
+          if (deleteErr) {
+            console.error('Database delete error:', deleteErr);
+            fs.unlinkSync(filePath);
+            return res.status(500).json({ 
+              message: 'Error clearing existing data',
+              error: deleteErr.message 
+            });
+          }
+
+          console.log(`Cleared existing data from ${tableName}. Deleted ${deleteResult.affectedRows} rows.`);
+
+          // Build the insert query based on segment
+          let insertQuery, values;
+
+          if (isSegment2) {
+          // Query for segment 2 (includes lay_direction, lay_vessel, date_installed, burial_method, burial_depth)
+          insertQuery = `
+            INSERT INTO ${tableName} (
+              pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
+              decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
+              distance_from_equator, decimal_longitude, difference_in_latitude, 
+              difference_in_mps, difference_in_edist, difference_in_longitude, 
+              course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
+              slack, cable_between_positions, cable_cumulative_total, cable_type, 
+              cumulative_by_type, cable_totals_by_type, approx_depth, lay_direction, 
+              lay_vessel, date_installed, burial_method, burial_depth, route_features, 
+              a, aa, ee
+            ) VALUES ?`;
+
+          values = results.map(row => [
+            row.pos_no || null,
+            row.event || null,
+            row.latitude || null,
+            row.latitude2 || null,
+            row.latitude3 || null,
+            row.longitude || null,
+            row.longitude2 || null,
+            row.longitude3 || null,
+            row.decimal_latitude || null,
+            row.radians_latitude || null,
+            row.sin_latitude || null,
+            row.meridional_parts || null,
+            row.distance_from_equator || null,
+            row.decimal_longitude || null,
+            row.difference_in_latitude || null,
+            row.difference_in_mps || null,
+            row.difference_in_edist || null,
+            row.difference_in_longitude || null,
+            row.course || null,
+            row.distance_in_nmiles || null,
+            row.bearing || null,
+            row.between_positions || null,
+            row.cumulative_total || null,
+            row.slack || null,
+            row.cable_between_positions || null,
+            row.cable_cumulative_total || null,
+            row.cable_type || null,
+            row.cumulative_by_type || null,
+            row.cable_totals_by_type || null,
+            row.approx_depth || null,
+            row.lay_direction || null,
+            row.lay_vessel || null,
+            row.date_installed || null,
+            row.burial_method || null,
+            row.burial_depth || null,
+            row.route_features || null,
+            row.a || null,
+            row.aa || null,
+            row.ee || null
+          ]);
+        } else {
+          // Query for segments 1 and 3 (includes planned_target_burial_depth)
+          insertQuery = `
+            INSERT INTO ${tableName} (
+              pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
+              decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
+              distance_from_equator, decimal_longitude, difference_in_latitude, 
+              difference_in_mps, difference_in_edist, difference_in_longitude, 
+              course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
+              slack, cable_between_positions, cable_cumulative_total, cable_type, 
+              cumulative_by_type, cable_totals_by_type, approx_depth, 
+              planned_target_burial_depth, route_features, a, aa, ee
+            ) VALUES ?`;
+
+          values = results.map(row => [
+            row.pos_no || null,
+            row.event || null,
+            row.latitude || null,
+            row.latitude2 || null,
+            row.latitude3 || null,
+            row.longitude || null,
+            row.longitude2 || null,
+            row.longitude3 || null,
+            row.decimal_latitude || null,
+            row.radians_latitude || null,
+            row.sin_latitude || null,
+            row.meridional_parts || null,
+            row.distance_from_equator || null,
+            row.decimal_longitude || null,
+            row.difference_in_latitude || null,
+            row.difference_in_mps || null,
+            row.difference_in_edist || null,
+            row.difference_in_longitude || null,
+            row.course || null,
+            row.distance_in_nmiles || null,
+            row.bearing || null,
+            row.between_positions || null,
+            row.cumulative_total || null,
+            row.slack || null,
+            row.cable_between_positions || null,
+            row.cable_cumulative_total || null,
+            row.cable_type || null,
+            row.cumulative_by_type || null,
+            row.cable_totals_by_type || null,
+            row.approx_depth || null,
+            row.planned_target_burial_depth || null,
+            row.route_features || null,
+            row.a || null,
+            row.aa || null,
+            row.ee || null
+          ]);
+        }
+
+          // Execute the insert query
+          db.query(insertQuery, [values], (err, insertResult) => {
+            // Always clean up the file
+            fs.unlinkSync(filePath);
+            
+            if (err) {
+              console.error('Database insert error:', err);
+              return res.status(500).json({ 
+                message: 'Error inserting CSV data',
+                error: err.message 
+              });
+            }
+
+            console.log(`Successfully inserted ${values.length} records into ${tableName}`);
+
+            // Log the CSV upload with specific table info
+            db.query(
+              "INSERT INTO data_updates (description, date_time) VALUES (?, NOW())",
+              [`Updated RPL data in ${tableName} from CSV (deleted ${deleteResult.affectedRows} old records, inserted ${values.length} new records)`],
+              (logErr) => {
+                if (logErr) {
+                  console.error('Error logging data update:', logErr);
+                  // Don't fail the request for logging errors
+                }
+
+                // Send success response
+                res.status(200).json({ 
+                  message: `CSV data updated in ${tableName} successfully`,
+                  tableName: tableName,
+                  recordsDeleted: deleteResult.affectedRows,
+                  recordsInserted: values.length,
+                  success: true
+                });
+              }
+            );
+          });
+        }); // Close the DELETE query callback
+      })
+      .on('error', (err) => {
+        console.error('CSV parsing error:', err);
+        fs.unlinkSync(filePath);
+        res.status(500).json({ 
+          message: 'Error parsing CSV file',
+          error: err.message 
+        });
+      });
+  });
 });
 
 // Data Handling Deletion
