@@ -882,7 +882,7 @@ app.post('/upload-csv', upload.single('file'), (req, res) => {
 });
 
 // CSV headers (manually defined)
-const sea_us_1_3_Headers = [
+const sea_us_1_3_headers = [
   'pos_no', 'event', 'latitude', 'latitude2', 'latitude3', 'longitude', 
   'longitude2', 'longitude3', 'decimal_latitude', 'radians_latitude', 
   'sin_latitude', 'meridional_parts', 'distance_from_equator', 
@@ -894,7 +894,7 @@ const sea_us_1_3_Headers = [
   'planned_target_burial_depth', 'route_features', 'a', 'aa', 'ee'
 ];
 
-const sea_us_2_Headers = [
+const sea_us_2_headers = [
   'pos_no', 'event', 'latitude', 'latitude2', 'latitude3', 'longitude', 
   'longitude2', 'longitude3', 'decimal_latitude', 'radians_latitude', 
   'sin_latitude', 'meridional_parts', 'distance_from_equator', 
@@ -905,6 +905,27 @@ const sea_us_2_Headers = [
   'cumulative_by_type', 'cable_totals_by_type', 'approx_depth', 
   'lay_direction', 'lay_vessel', 'date_installed', 'burial_method', 
   'burial_depth', 'route_features', 'a', 'aa', 'ee'
+];
+
+const sjc_headers = [
+  'pos_no', 'event', 'latitude', 'latitude2', 'latitude3', 'longitude', 
+  'longitude2', 'longitude3', 'decimal_latitude', 'radians_latitude', 
+  'sin_latitude', 'meridional_parts', 'distance_from_equator', 
+  'decimal_longitude', 'difference_in_latitude', 'difference_in_mps', 
+  'difference_in_edist', 'difference_in_longitude', 'course', 
+  'distance_in_nmiles', 'bearing', 'between_positions', 'cumulative_total', 
+  'slack', 'cable_between_positions', 'cable_cumulative_total', 'cable_type', 
+  'cumulative_by_type', 'cable_totals_by_type', 'approx_depth', 
+  'burial_depth', 'fibre_type', 'lay_vessel', 'date_installed', 
+  'remarks', 'a', 'aa', 'ee'
+];
+
+const tgnia_headers = [
+  'line_no', 'vessel_name', 'operation_date', 'latitude', 'longitude', 'remarks', 
+  'repeater', 'cable_type', 'cable_id', 'cable_each_event', 
+  'cable_each_repeater', 'cable_cumm', 'route_each_event', 
+  'route_distance_cumm', 'slack', 'burial_depth', 
+  'water_depth', 'comments'
 ];
 
 app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
@@ -937,9 +958,15 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
   const tableName = `${dbPrefix}_rpl_${segment}`;
   console.log(`Target table: ${tableName}`);
 
-  // Determine headers and query structure based on segment
-  const isSegment2 = segment === 's2';
-  const headers = isSegment2 ? sea_us_2_Headers : sea_us_1_3_Headers;
+  // Determine headers based on cable type and segment
+  let headers;
+  if (cable === 'sea-us') {
+    headers = segment === 's2' ? sea_us_2_headers : sea_us_1_3_headers;
+  } else if (cable === 'sjc') {
+    headers = sjc_headers;
+  } else if (cable === 'tgnia') {
+    headers = tgnia_headers;
+  }
   
   // Validate that the table exists
   db.query(`SHOW TABLES LIKE '${tableName}'`, (err, result) => {
@@ -985,117 +1012,117 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
 
           console.log(`Cleared existing data from ${tableName}. Deleted ${deleteResult.affectedRows} rows.`);
 
-          // Build the insert query based on segment
+          // Build the insert query based on cable type and segment
           let insertQuery, values;
 
-          if (isSegment2) {
-          // Query for segment 2 (includes lay_direction, lay_vessel, date_installed, burial_method, burial_depth)
-          insertQuery = `
-            INSERT INTO ${tableName} (
-              pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
-              decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
-              distance_from_equator, decimal_longitude, difference_in_latitude, 
-              difference_in_mps, difference_in_edist, difference_in_longitude, 
-              course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
-              slack, cable_between_positions, cable_cumulative_total, cable_type, 
-              cumulative_by_type, cable_totals_by_type, approx_depth, lay_direction, 
-              lay_vessel, date_installed, burial_method, burial_depth, route_features, 
-              a, aa, ee
-            ) VALUES ?`;
+          if (cable === 'sea-us' && segment === 's2') {
+            // Query for SEA-US segment 2
+            insertQuery = `
+              INSERT INTO ${tableName} (
+                pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
+                decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
+                distance_from_equator, decimal_longitude, difference_in_latitude, 
+                difference_in_mps, difference_in_edist, difference_in_longitude, 
+                course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
+                slack, cable_between_positions, cable_cumulative_total, cable_type, 
+                cumulative_by_type, cable_totals_by_type, approx_depth, lay_direction, 
+                lay_vessel, date_installed, burial_method, burial_depth, route_features, 
+                a, aa, ee
+              ) VALUES ?`;
 
-          values = results.map(row => [
-            row.pos_no || null,
-            row.event || null,
-            row.latitude || null,
-            row.latitude2 || null,
-            row.latitude3 || null,
-            row.longitude || null,
-            row.longitude2 || null,
-            row.longitude3 || null,
-            row.decimal_latitude || null,
-            row.radians_latitude || null,
-            row.sin_latitude || null,
-            row.meridional_parts || null,
-            row.distance_from_equator || null,
-            row.decimal_longitude || null,
-            row.difference_in_latitude || null,
-            row.difference_in_mps || null,
-            row.difference_in_edist || null,
-            row.difference_in_longitude || null,
-            row.course || null,
-            row.distance_in_nmiles || null,
-            row.bearing || null,
-            row.between_positions || null,
-            row.cumulative_total || null,
-            row.slack || null,
-            row.cable_between_positions || null,
-            row.cable_cumulative_total || null,
-            row.cable_type || null,
-            row.cumulative_by_type || null,
-            row.cable_totals_by_type || null,
-            row.approx_depth || null,
-            row.lay_direction || null,
-            row.lay_vessel || null,
-            row.date_installed || null,
-            row.burial_method || null,
-            row.burial_depth || null,
-            row.route_features || null,
-            row.a || null,
-            row.aa || null,
-            row.ee || null
-          ]);
-        } else {
-          // Query for segments 1 and 3 (includes planned_target_burial_depth)
-          insertQuery = `
-            INSERT INTO ${tableName} (
-              pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
-              decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
-              distance_from_equator, decimal_longitude, difference_in_latitude, 
-              difference_in_mps, difference_in_edist, difference_in_longitude, 
-              course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
-              slack, cable_between_positions, cable_cumulative_total, cable_type, 
-              cumulative_by_type, cable_totals_by_type, approx_depth, 
-              planned_target_burial_depth, route_features, a, aa, ee
-            ) VALUES ?`;
+            values = results.map(row => [
+              row.pos_no || null, row.event || null, row.latitude || null,
+              row.latitude2 || null, row.latitude3 || null, row.longitude || null,
+              row.longitude2 || null, row.longitude3 || null, row.decimal_latitude || null,
+              row.radians_latitude || null, row.sin_latitude || null, row.meridional_parts || null,
+              row.distance_from_equator || null, row.decimal_longitude || null, row.difference_in_latitude || null,
+              row.difference_in_mps || null, row.difference_in_edist || null, row.difference_in_longitude || null,
+              row.course || null, row.distance_in_nmiles || null, row.bearing || null,
+              row.between_positions || null, row.cumulative_total || null, row.slack || null,
+              row.cable_between_positions || null, row.cable_cumulative_total || null, row.cable_type || null,
+              row.cumulative_by_type || null, row.cable_totals_by_type || null, row.approx_depth || null,
+              row.lay_direction || null, row.lay_vessel || null, row.date_installed || null,
+              row.burial_method || null, row.burial_depth || null, row.route_features || null,
+              row.a || null, row.aa || null, row.ee || null
+            ]);
+          } else if (cable === 'sea-us') {
+            // Query for SEA-US segments 1 and 3
+            insertQuery = `
+              INSERT INTO ${tableName} (
+                pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
+                decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
+                distance_from_equator, decimal_longitude, difference_in_latitude, 
+                difference_in_mps, difference_in_edist, difference_in_longitude, 
+                course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
+                slack, cable_between_positions, cable_cumulative_total, cable_type, 
+                cumulative_by_type, cable_totals_by_type, approx_depth, 
+                planned_target_burial_depth, route_features, a, aa, ee
+              ) VALUES ?`;
 
-          values = results.map(row => [
-            row.pos_no || null,
-            row.event || null,
-            row.latitude || null,
-            row.latitude2 || null,
-            row.latitude3 || null,
-            row.longitude || null,
-            row.longitude2 || null,
-            row.longitude3 || null,
-            row.decimal_latitude || null,
-            row.radians_latitude || null,
-            row.sin_latitude || null,
-            row.meridional_parts || null,
-            row.distance_from_equator || null,
-            row.decimal_longitude || null,
-            row.difference_in_latitude || null,
-            row.difference_in_mps || null,
-            row.difference_in_edist || null,
-            row.difference_in_longitude || null,
-            row.course || null,
-            row.distance_in_nmiles || null,
-            row.bearing || null,
-            row.between_positions || null,
-            row.cumulative_total || null,
-            row.slack || null,
-            row.cable_between_positions || null,
-            row.cable_cumulative_total || null,
-            row.cable_type || null,
-            row.cumulative_by_type || null,
-            row.cable_totals_by_type || null,
-            row.approx_depth || null,
-            row.planned_target_burial_depth || null,
-            row.route_features || null,
-            row.a || null,
-            row.aa || null,
-            row.ee || null
-          ]);
-        }
+            values = results.map(row => [
+              row.pos_no || null, row.event || null, row.latitude || null,
+              row.latitude2 || null, row.latitude3 || null, row.longitude || null,
+              row.longitude2 || null, row.longitude3 || null, row.decimal_latitude || null,
+              row.radians_latitude || null, row.sin_latitude || null, row.meridional_parts || null,
+              row.distance_from_equator || null, row.decimal_longitude || null, row.difference_in_latitude || null,
+              row.difference_in_mps || null, row.difference_in_edist || null, row.difference_in_longitude || null,
+              row.course || null, row.distance_in_nmiles || null, row.bearing || null,
+              row.between_positions || null, row.cumulative_total || null, row.slack || null,
+              row.cable_between_positions || null, row.cable_cumulative_total || null, row.cable_type || null,
+              row.cumulative_by_type || null, row.cable_totals_by_type || null, row.approx_depth || null,
+              row.planned_target_burial_depth || null, row.route_features || null,
+              row.a || null, row.aa || null, row.ee || null
+            ]);
+          } else if (cable === 'sjc') {
+            // Query for SJC cable
+            insertQuery = `
+              INSERT INTO ${tableName} (
+                pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
+                decimal_latitude, radians_latitude, sin_latitude, meridional_parts,
+                distance_from_equator, decimal_longitude, difference_in_latitude, 
+                difference_in_mps, difference_in_edist, difference_in_longitude, 
+                course, distance_in_nmiles, bearing, between_positions, cumulative_total, 
+                slack, cable_between_positions, cable_cumulative_total, cable_type, 
+                cumulative_by_type, cable_totals_by_type, approx_depth, 
+                burial_depth, fibre_type, lay_vessel, date_installed, 
+                remarks, a, aa, ee
+              ) VALUES ?`;
+
+            values = results.map(row => [
+              row.pos_no || null, row.event || null, row.latitude || null,
+              row.latitude2 || null, row.latitude3 || null, row.longitude || null,
+              row.longitude2 || null, row.longitude3 || null, row.decimal_latitude || null,
+              row.radians_latitude || null, row.sin_latitude || null, row.meridional_parts || null,
+              row.distance_from_equator || null, row.decimal_longitude || null, row.difference_in_latitude || null,
+              row.difference_in_mps || null, row.difference_in_edist || null, row.difference_in_longitude || null,
+              row.course || null, row.distance_in_nmiles || null, row.bearing || null,
+              row.between_positions || null, row.cumulative_total || null, row.slack || null,
+              row.cable_between_positions || null, row.cable_cumulative_total || null, row.cable_type || null,
+              row.cumulative_by_type || null, row.cable_totals_by_type || null, row.approx_depth || null,
+              row.burial_depth || null, row.fibre_type || null, row.lay_vessel || null,
+              row.date_installed || null, row.remarks || null,
+              row.a || null, row.aa || null, row.ee || null
+            ]);
+          } else if (cable === 'tgnia') {
+            // Query for TGNIA cable
+            insertQuery = `
+              INSERT INTO ${tableName} (
+                line_no, vessel_name, operation_date, latitude, longitude, remarks, 
+                repeater, cable_type, cable_id, cable_each_event, 
+                cable_each_repeater, cable_cumm, route_each_event, 
+                route_distance_cumm, slack, burial_depth, 
+                water_depth, comments
+              ) VALUES ?`;
+
+            values = results.map(row => [
+              row.line_no || null, row.vessel_name || null, row.operation_date || null,
+              row.latitude || null, row.longitude || null, row.remarks || null,
+              row.repeater || null, row.cable_type || null, row.cable_id || null,
+              row.cable_each_event || null, row.cable_each_repeater || null, row.cable_cumm || null,
+              row.route_each_event || null, row.route_distance_cumm || null, row.slack || null,
+              row.burial_depth || null, row.water_depth || null, row.comments || null
+            ]);
+          }
 
           // Execute the insert query
           db.query(insertQuery, [values], (err, insertResult) => {
@@ -1126,6 +1153,8 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
                 res.status(200).json({ 
                   message: `CSV data updated in ${tableName} successfully`,
                   tableName: tableName,
+                  cableType: cable,
+                  segment: segment,
                   recordsDeleted: deleteResult.affectedRows,
                   recordsInserted: values.length,
                   success: true
