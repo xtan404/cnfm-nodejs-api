@@ -41,6 +41,25 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
+// API: Delete all cable cuts data
+app.delete('/delete-cable-cuts', async (req, res) => {
+  try {
+    await db.query("DELETE FROM cable_cuts");
+
+    res.json({
+      success: true,
+      message: "Cleared all cut simulations successfully."
+    });
+  } catch (error) {
+    console.error("Error clearing simulation data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to clear simulation data!",
+      error: error.message
+    });
+  }
+});
+
 // API: Get all cable cuts data
 app.get('/fetch-cable-cuts', (req, res) => {
   const query = `
@@ -68,11 +87,38 @@ app.post('/cable-cuts', (req, res) => {
 
   db.query(query, [cut_id, distance, cut_type, simulated, latitude, longitude, depth], (err, results) => {
     if (err) {
-      console.error('Error inserting cable cuts data:', err);
-      return res.status(500).json({ error: 'Failed to insert data' });
+      console.error('Database error:', err);
+
+      // Handle duplicate entry
+      if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
+        return res.status(409).json({
+          error: 'Duplicate Entry',
+          message: 'This cable cut already exists. Duplicates are not allowed.'
+        });
+      }
+
+      return res.status(409).json({
+        error: 'Operation Failed',
+        message: 'Unable to create cable cut. Please try again.'
+      });
     }
 
-    res.status(201).json({ message: 'Cable cuts data inserted successfully', data: results });
+    // Success response
+    res.status(201).json({
+      success: true,
+      message: 'Cable cut data inserted successfully',
+      data: {
+        cut_id: cut_id,
+        distance: distance,
+        cut_type: cut_type,
+        simulated: simulated,
+        latitude: latitude,
+        longitude: longitude,
+        depth: depth,
+        insertId: results.insertId,
+        affectedRows: results.affectedRows
+      }
+    });
   });
 });
 
@@ -928,6 +974,7 @@ const tgnia_headers = [
   'water_depth', 'comments'
 ];
 
+// Fixed version of the CSV upload handler
 app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
   const { cable, segment } = req.params;
   
@@ -1016,7 +1063,7 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
           let insertQuery, values;
 
           if (cable === 'sea-us' && segment === 's2') {
-            // Query for SEA-US segment 2
+            // Query for SEA-US segment 2 (has different structure)
             insertQuery = `
               INSERT INTO ${tableName} (
                 pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
@@ -1045,8 +1092,8 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
               row.burial_method || null, row.burial_depth || null, row.route_features || null,
               row.a || null, row.aa || null, row.ee || null
             ]);
-          } else if (cable === 'sea-us') {
-            // Query for SEA-US segments 1 and 3
+          } else if (cable === 'sea-us' && (segment === 's1' || segment === 's3')) {
+            // Query for SEA-US segments 1 and 3 (different structure from s2)
             insertQuery = `
               INSERT INTO ${tableName} (
                 pos_no, event, latitude, latitude2, latitude3, longitude, longitude2, longitude3,
@@ -1122,6 +1169,12 @@ app.post('/upload-rpl/:cable/:segment', upload.single('file'), (req, res) => {
               row.route_each_event || null, row.route_distance_cumm || null, row.slack || null,
               row.burial_depth || null, row.water_depth || null, row.comments || null
             ]);
+          } else {
+            // Handle unexpected cable/segment combinations
+            fs.unlinkSync(filePath);
+            return res.status(400).json({ 
+              message: `Unsupported cable/segment combination: ${cable}/${segment}` 
+            });
           }
 
           // Execute the insert query
