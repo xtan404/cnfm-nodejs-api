@@ -41,6 +41,50 @@ app.get('/', (req, res) => {
   return res.json("Node Server has been initialized...");
 });
 
+// API: Delete specific cable cut data by cut_id
+app.delete('/delete-single-cable-cuts/:cutId', async (req, res) => {
+  try {
+    const { cutId } = req.params;
+    
+    // Validate cutId parameter
+    if (!cutId) {
+      return res.status(400).json({
+        success: false,
+        message: "Cut ID is required"
+      });
+    }
+
+    // Delete specific cable cut by cut_id
+    const result = await db.query(
+      "DELETE FROM cable_cuts WHERE cut_id = ?", 
+      [cutId]
+    );
+
+    // Check if any rows were affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cable cut not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Cable cut ${cutId} deleted successfully.`,
+      deletedId: cutId,
+      affectedRows: result.affectedRows
+    });
+
+  } catch (error) {
+    console.error("Error deleting cable cut:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete cable cut!",
+      error: error.message
+    });
+  }
+});
+
 // API: Delete all cable cuts data
 app.delete('/delete-cable-cuts', async (req, res) => {
   try {
