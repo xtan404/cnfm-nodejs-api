@@ -78,14 +78,14 @@ app.get('/fetch-cable-cuts', (req, res) => {
 
 // API: Insert all cable cuts data
 app.post('/cable-cuts', (req, res) => {
-  const { cut_id, distance, cut_type, simulated, latitude, longitude, depth } = req.body;
+  const { cut_id, distance, cut_type, fault_date, simulated, latitude, longitude, depth } = req.body;
 
   const query = `
-    INSERT INTO cable_cuts (cut_id, distance, cut_type, simulated, latitude, longitude, depth)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cable_cuts (cut_id, distance, cut_type, fault_date, simulated, latitude, longitude, depth)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(query, [cut_id, distance, cut_type, simulated, latitude, longitude, depth], (err, results) => {
+  db.query(query, [cut_id, distance, cut_type, fault_date, simulated, latitude, longitude, depth], (err, results) => {
     if (err) {
       console.error('Database error:', err);
 
@@ -111,6 +111,7 @@ app.post('/cable-cuts', (req, res) => {
         cut_id: cut_id,
         distance: distance,
         cut_type: cut_type,
+        fault_date: fault_date,
         simulated: simulated,
         latitude: latitude,
         longitude: longitude,
