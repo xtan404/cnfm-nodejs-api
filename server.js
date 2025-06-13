@@ -1653,6 +1653,96 @@ app.get('/sea-us', (request, response) => {
     })
 })
 
+// Change Password API Endpoint
+app.post('/change-password', async (req, res) => {
+  const { user_id, current_password, new_password } = req.body;
+ 
+  // Validate required fields
+  if (!user_id || !current_password || !new_password) {
+    return res.status(400).json({ 
+      success: false,
+      error: "All fields are required"
+    });
+  }
+ 
+  // Get user's current password from database
+  const getUserSql = "SELECT user_password FROM users WHERE user_id = ?";
+  db.query(getUserSql, [user_id], async (error, results) => {
+    if (error) {
+      console.error("Database Error:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: "Database Error"
+      });
+    }
+ 
+    if (results.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: "User not found"
+      });
+    }
+ 
+    const user = results[0];
+ 
+    try {
+      // Verify current password
+      const isCurrentPasswordValid = await argon2.verify(user.user_password, current_password);
+ 
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Current password is incorrect"
+        });
+      }
+ 
+      // Check if new password is different from current password
+      const isSamePassword = await argon2.verify(user.user_password, new_password);
+      if (isSamePassword) {
+        return res.status(400).json({ 
+          success: false,
+          error: "New password must be different from current password"
+        });
+      }
+ 
+      // Hash the new password
+      const hashedNewPassword = await argon2.hash(new_password);
+ 
+      // Update password and updated_at timestamp in database
+      const updatePasswordSql = "UPDATE users SET user_password = ?, updated_at = NOW() WHERE user_id = ?";
+      db.query(updatePasswordSql, [hashedNewPassword, user_id], (updateError, updateResults) => {
+        if (updateError) {
+          console.error("Password Update Error:", updateError);
+          return res.status(500).json({ 
+            success: false,
+            error: "Failed to update password"
+          });
+        }
+ 
+        if (updateResults.affectedRows === 0) {
+          return res.status(404).json({ 
+            success: false,
+            error: "User not found or password not updated"
+          });
+        }
+ 
+        // Success response
+        res.json({ 
+          success: true,
+          message: "Password changed successfully"
+        });
+      });
+ 
+    } catch (hashError) {
+      console.error("❌ Password Hashing/Verification Error:", hashError);
+      return res.status(500).json({ 
+        success: false,
+        error: "Password processing error"
+      });
+    }
+  });
+});
+
 app.post('/register', async (req, res) => {
   const { user_fname, user_lname, user_email, user_password } = req.body;
 
