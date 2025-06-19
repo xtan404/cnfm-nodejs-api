@@ -878,37 +878,116 @@ app.get('/sea-us-rpl-s3', (req, res) => {
   });
 });
 
-
-// Fetching Last Update
-app.get('/latest-update', (req, res) => {
+app.get('/sea-us-rpl-s4', (req, res) => {
   const query = `
-    SELECT update_id, description, date_time 
-    FROM data_updates 
-    ORDER BY date_time DESC 
-    LIMIT 1
+    SELECT
+      event,
+      latitude AS full_latitude,
+      CASE 
+        WHEN (longitude + longitude2) < 0 
+        THEN (longitude + longitude2) + 360 
+        ELSE (longitude + longitude2) 
+      END AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth
+    FROM sea_us_rpl_s4
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0
   `;
 
   db.query(query, (err, results) => {
     if (err) {
+      console.error('Error fetching sea_us_rpl_s4 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sea-us-rpl-s5', (req, res) => {
+  const query = `
+    SELECT
+      event,
+      latitude AS full_latitude,
+      CASE 
+        WHEN (longitude + longitude2) < 0 
+        THEN (longitude + longitude2) + 360 
+        ELSE (longitude + longitude2) 
+      END AS full_longitude,
+      cable_cumulative_total,
+      approx_depth AS Depth
+    FROM sea_us_rpl_s5
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sea_us_rpl_s5 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/sea-us-rpl-s6', (req, res) => {
+  const query = `
+    SELECT
+      repeater AS event,
+      (latitude + latitude2) AS full_latitude,
+      CASE 
+        WHEN (longitude + longitude2) < 0 
+        THEN (longitude + longitude2) + 360 
+        ELSE (longitude + longitude2) 
+      END AS full_longitude,
+      total_length AS cable_cumulative_total,
+      corr_depth AS Depth
+    FROM sea_us_rpl_s6
+    WHERE 
+      (latitude + latitude2) != 0 
+      AND (longitude + longitude2) != 0 
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching sea_us_rpl_s6 data:', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+    res.json(results);
+  });
+});
+
+// Fetching Last Update
+app.get('/latest-update', (req, res) => {
+  const query = `
+    SELECT description, date_time, file_name 
+    FROM data_updates 
+    ORDER BY date_time DESC 
+    LIMIT 1
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
       console.error('Error fetching latest update:', err);
-      return res.status(500).json({ error: 'Failed to fetch latest update' });
+      return res.status(500).json({ message: 'Error fetching update info' });
     }
-
-    if (results.length === 0) {
-      return res.json({ message: 'No updates found', update: null });
+    
+    if (results.length > 0) {
+      res.json({
+        update: {
+          description: results[0].description,
+          date_time: results[0].date_time,
+          file_name: results[0].file_name
+        }
+      });
+    } else {
+      res.json({ update: null });
     }
-
-    const update = results[0];
-
-    // Format timestamp to local time string
-    const formattedDate = new Date(update.date_time).toLocaleString();
-
-    res.json({ 
-      update: {
-        ...update,
-        date_time: formattedDate
-      }
-    });
   });
 });
 
@@ -924,6 +1003,7 @@ const upload = multer({ dest: 'uploads/' });
 
 app.post('/upload-csv', upload.single('file'), (req, res) => {
   const filePath = req.file.path;
+  const fileName = req.file.originalname; // ✅ Get the original filename
   const results = [];
 
   fs.createReadStream(filePath)
@@ -955,17 +1035,21 @@ app.post('/upload-csv', upload.single('file'), (req, res) => {
           return res.status(500).json({ message: 'Error inserting CSV data' });
         }
 
-        // ✅ Log the CSV upload
+        // ✅ Log the CSV upload with filename
         db.query(
-          "INSERT INTO data_updates (description, date_time) VALUES (?, NOW())",
-          ['Uploaded new utilization data from CSV'],
+          "INSERT INTO data_updates (description, date_time, file_name) VALUES (?, NOW(), ?)",
+          ['Uploaded new utilization data from CSV', fileName],
           (logErr) => {
             if (logErr) {
               console.error('Error logging data update:', logErr);
               return res.status(500).json({ message: 'Data inserted, but failed to log update.' });
             }
 
-            res.json({ message: 'CSV data inserted and update logged successfully' });
+            res.json({ 
+              message: 'CSV data inserted and update logged successfully',
+              fileName: fileName,
+              recordsInserted: values.length
+            });
           }
         );
       });
