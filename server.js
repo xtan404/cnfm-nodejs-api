@@ -1399,20 +1399,13 @@ app.get('/data-summary', (request, response) => {
 })
 
 app.get('/average-util', (request, response) => {
-  const currentQuery = "SELECT a_side FROM utilization WHERE site = 'IPOP';";
-  const previousQuery = "SELECT a_side FROM previous_utilization WHERE site = 'IPOP';";
+  const currentQuery = "SELECT cable, a_side FROM utilization WHERE site = 'IPOP';";
 
   db.query(currentQuery, (error1, currentData) => {
     if (error1) return response.status(500).json({ error: error1.message });
-
-    db.query(previousQuery, (error2, previousData) => {
-      if (error2) return response.status(500).json({ error: error2.message });
-
       return response.json({
-        current: currentData,
-        previous: previousData
+        current: currentData
       });
-    });
   });
 });
 
